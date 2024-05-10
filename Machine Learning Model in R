@@ -20,14 +20,14 @@ library(ggplot2)
 library(gplots)
 library(dplyr)
 
-# Set a seed for reproducibility
+# Setting a seed for reproducibility
 set.seed(1234)
 
 # Loading the dataset
 osteoporosis <- read_csv("Desktop/ML Dataset/osteoporosis.csv")
 View(osteoporosis)
 
-# Drop rows with null values
+# Dropping rows with null values
 osteoporosis <- na.omit(osteoporosis)
 
 # Converting necessary columns to factors before any splitting
@@ -60,20 +60,20 @@ logit_model <- glm(Osteoporosis ~ Age + Gender + Family.History + RaceEthnicity 
                      Medications + Prior.Fractures + Hormonal.Changes, 
                    data = train, family = binomial)
 
-# Print summary of logistic regression model
+# Printing summary of logistic regression model
 summary(logit_model)
 
-# Compute correlation matrix of numeric variables
+# Computing correlation matrix of numeric variables
 numeric_vars <- train[sapply(train, is.numeric)]
 correlation_matrix <- cor(numeric_vars)
 
-# Set up the plotting window or save to a file with specified dimensions
+# Setting up the plotting window or save to a file with specified dimensions
 png("heatmap.png", width = 800, height = 600)  # Adjust size as needed
 
-# Create a blue-tone color palette
+# Creating a blue-tone color palette
 blue_palette <- colorRampPalette(c("lightblue", "blue"))
 
-# Generate the heatmap with blue-tone colors and labels on the axes
+# Generating the heatmap with blue-tone colors and labels on the axes. Also adjusting size since chart was too big
 heatmap.2(correlation_matrix,
           key = TRUE,
           keysize = 1,
@@ -90,7 +90,7 @@ heatmap.2(correlation_matrix,
           cexCol = 0.6,
           col = blue_palette(100))
 
-# Fit Random Forest model and assess feature importance
+# Fitting Random Forest model and assess feature importance
 rf_model <- randomForest(Osteoporosis ~ ., data = train, importance = TRUE, ntree = 500)
 importance_values <- importance(rf_model, type = 1)
 feature_importances <- data.frame(
@@ -101,6 +101,6 @@ feature_importances <- feature_importances %>%
   arrange(desc(importance))
 print(feature_importances)
 
-# Draw conclusions
+# My conclusion
 cat("Based on the Random Forest model, the most important features for predicting Osteoporosis are:\n")
 print(feature_importances)
