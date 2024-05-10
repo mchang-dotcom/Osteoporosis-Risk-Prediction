@@ -1,0 +1,106 @@
+# Clearing R Environment
+rm(list = ls())
+
+# installing the packages needed for Machine Learning Model
+install.packages("readr")
+install.packages("randomForest")
+install.packages("caret")
+install.packages("rpart")
+install.packages("ggplot2")
+install.packages("gplots")
+install.packages("stats")
+install.packages("dplyr")
+
+# Loading the necessary libraries
+library(readr)
+library(randomForest)
+library(caret)
+library(rpart)
+library(ggplot2)
+library(gplots)
+library(dplyr)
+
+# Set a seed for reproducibility
+set.seed(1234)
+
+# Loading the dataset
+osteoporosis <- read_csv("Desktop/ML Dataset/osteoporosis.csv")
+View(osteoporosis)
+
+# Drop rows with null values
+osteoporosis <- na.omit(osteoporosis)
+
+# Converting necessary columns to factors before any splitting
+columns_to_factor <- c("Gender", "Hormonal Changes", "Family History", "Race/Ethnicity", 
+                       "Body Weight", "Calcium Intake", "Vitamin D Intake", "Smoking", 
+                       "Alcohol Consumption", "Medical Conditions", "Medications", 
+                       "Prior Fractures", "Osteoporosis")
+osteoporosis[columns_to_factor] <- lapply(osteoporosis[columns_to_factor], as.factor)
+
+# Splitting the data into training and testing sets
+train_indices <- sample(1:nrow(osteoporosis), size = 0.7 * nrow(osteoporosis))
+train <- osteoporosis[train_indices, ]
+test <- osteoporosis[-train_indices, ]
+
+# Renaming column names in both train and test sets to make them syntactically valid R identifiers
+names(train) <- make.names(names(train))
+names(test) <- make.names(names(test))
+
+# Renaming column
+names(train)[names(train) == "Race.Ethnicity"] <- "RaceEthnicity"
+names(test)[names(test) == "Race.Ethnicity"] <- "RaceEthnicity"
+
+# Quick view of concise summary of the structure of a data frame.
+glimpse(osteoporosis)
+dim(osteoporosis)
+
+# Performing logistic regression model
+logit_model <- glm(Osteoporosis ~ Age + Gender + Family.History + RaceEthnicity +
+                     Vitamin.D.Intake + Smoking + Medical.Conditions +
+                     Medications + Prior.Fractures + Hormonal.Changes, 
+                   data = train, family = binomial)
+
+# Print summary of logistic regression model
+summary(logit_model)
+
+# Compute correlation matrix of numeric variables
+numeric_vars <- train[sapply(train, is.numeric)]
+correlation_matrix <- cor(numeric_vars)
+
+# Set up the plotting window or save to a file with specified dimensions
+png("heatmap.png", width = 800, height = 600)  # Adjust size as needed
+
+# Create a blue-tone color palette
+blue_palette <- colorRampPalette(c("lightblue", "blue"))
+
+# Generate the heatmap with blue-tone colors and labels on the axes
+heatmap.2(correlation_matrix,
+          key = TRUE,
+          keysize = 1,
+          density.info = "none",
+          trace = "none",
+          margins = c(10, 10),
+          main = "Correlation Heatmap",
+          srtRow = 0,
+          srtCol = 45,
+          dendrogram = 'none',
+          Colv = FALSE,
+          Rowv = FALSE,
+          cexRow = 0.6,
+          cexCol = 0.6,
+          col = blue_palette(100))
+
+# Fit Random Forest model and assess feature importance
+rf_model <- randomForest(Osteoporosis ~ ., data = train, importance = TRUE, ntree = 500)
+importance_values <- importance(rf_model, type = 1)
+feature_importances <- data.frame(
+  feature = rownames(importance_values),
+  importance = importance_values[, "MeanDecreaseAccuracy"]
+)
+feature_importances <- feature_importances %>%
+  arrange(desc(importance))
+print(feature_importances)
+
+# Draw conclusions
+cat("Based on the Random Forest model, the most important features for predicting Osteoporosis are:\n")
+print(feature_importances)
